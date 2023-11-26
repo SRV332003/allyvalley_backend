@@ -1,0 +1,1 @@
+Insert into users (email,name,age,gender,languages,about,proffesion,phone) values ('asd','asd','asd','asd','asd','asd','asd','asd')

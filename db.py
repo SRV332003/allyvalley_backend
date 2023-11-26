@@ -1,4 +1,5 @@
 import psycopg2
+import psycopg2.extras
 
 class DB:
     def __init__(self):
@@ -6,55 +7,76 @@ class DB:
             database="allyvalley",
             user="postgres",
         )
-        self.cur = self.conn.cursor()
+        self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         self.conn.commit()
 
-    def query(self, query, params=None):
+    def query(self, query, params=None,assoc=True):
         self.cur.execute(query, params)
         self.conn.commit()
-        return self.cur.fetchall()
+        try:
+            return self.cur.fetchall()
+        
+        except:
+            return None
     
-    def reset(self):
-        self.query("Truncate users;")
-        self.query("Truncate messages;")
-        self.query("Truncate matches;")
+    def reset(self,delete=False):
+        if delete:
+            self.query("Drop table if exists interests;")
+            self.query("Drop table if exists messages;")
+            self.query("Drop table if exists matches;")
+            self.query("Drop table if exists users;")
+           
+            
+            
+        else:
+            self.query("Truncate users;")
+            self.query("Truncate messages;")
+            self.query("Truncate matches;")
+            self.query("Truncate interests;")
+    
+
         
     def initialize(self):
         self.query("""Create table if not exists users (
                     id serial primary key,
                     email varchar(255) unique,
-                    age int,
+                    name varchar(255),
+                    age varchar(255),
                     gender varchar(255),
                     languages varchar(255),
                     about varchar(255),
                     proffesion varchar(255),
                     phone varchar(255) unique,
-                    interests varchar(255) 
-            );""")
+                    lat float,
+                    lon float,
+                    status varchar(255) default 'true'
+                );""")
         
         self.query("""Create table if not exists interests (
                     id serial primary key,
-                    user_id int,
-                    Lower(interest_name) varchar(255) unique,
-                    Foreign key (user_id) references users(id)
-            );""") 
+                    interest_name varchar(255) unique,
+                    email varchar(255),
+                    Foreign key (email) references users(email)
+                );""")
+        
         self.query("""Create table if not exists messages (
                     id serial primary key,
-                    sender int,
-                    receiver int,
+                    sender varchar(255),
+                    receiver varchar(255),
                     message varchar(255),
                     timestamp timestamp,
-                    Foreign key (sender) references users(id),
-                    Foreign key (receiver) references users(id)
-            );""")
+                    Foreign key (sender) references users(email),
+                    Foreign key (receiver) references users(email)
+                );""")
+        
         self.query("""Create table if not exists matches (
                     id serial primary key,
-                    user1 int,
-                    user2 int,
-                    Foreign key (user1) references users(id),
-                    Foreign key (user2) references users(id)
-            );""")
-
+                    email1 varchar(255),
+                    email2 varchar(255),
+                    Foreign key (email1) references users(email),
+                    Foreign key (email2) references users(email)
+                );""")
+        
+        
     def __del__(self):
         self.conn.close()
-

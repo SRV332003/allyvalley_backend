@@ -7,11 +7,11 @@ import subprocess
 import tempfile
 import time
 import zipfile
+import builtins
 from pathlib import Path
 from threading import Timer
 
 import requests
-
 
 def _get_command():
     system = platform.system()
@@ -84,7 +84,6 @@ def run_with_ngrok(app):
     :return: None
     """
     old_run = app.run
-
     def new_run(*args, **kwargs):
         port = kwargs.get('port', 5000)
         thread = Timer(1, start_ngrok, args=(port,))
