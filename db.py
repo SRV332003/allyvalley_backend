@@ -54,7 +54,7 @@ class DB:
         
         self.query("""Create table if not exists interests (
                     id serial primary key,
-                    interest_name varchar(255) unique,
+                    interest_name varchar(255),
                     email varchar(255),
                     Foreign key (email) references users(email)
                 );""")

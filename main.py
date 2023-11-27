@@ -87,6 +87,7 @@ def curLocation():
     email = data["email"]
     lat = data["lat"]
     lon = data["lon"]
+    print(email,lat,lon)
 
     users = db.query("Select * from users where email=%s", (email,))
     if not users:
@@ -122,7 +123,23 @@ def sendMessage():
     receiver = data["receiver"]
     message = data["message"]
 
-    db.query("Insert into messages (sender,receiver,message) values (%s,%s,%s)", (email, receiver, message))
+    try:
+        users = db.query("Select * from users where email=%s", (email,))
+        if not users:
+            return jsonify({"status": "error", "message": "User does not exist"})
+
+        users = db.query("Select * from users where email=%s", (receiver,))
+        if not users:
+            return jsonify({"status": "error", "message": "Receiver does not exist"})
+    except Exception as e:
+        print(e)
+        return jsonify({"status": "error", "message": "Invalid data", "error": str(e)})
+    
+    try:
+        db.query("Insert into messages (sender,receiver,message) values (%s,%s,%s)", (email, receiver, message))
+    except Exception as e: 
+        print(e)
+        return jsonify({"status": "error", "message": "Invalid data", "error": str(e)})
 
     return jsonify({"status": "success"})
 
@@ -135,6 +152,41 @@ def sendRequest():
     db.query("Insert into matches (user1,user2) values (%s,%s)", (email, receiver))
 
     return jsonify({"status": "success"})
+
+io = SocketIO(app, cors_allowed_origins="*")
+
+userEmailDict = {}
+
+@io.on("connection")
+def handleConnect():
+
+    print("Connected")
+    
+    @io.on("addUser")
+    def handleAddUser(data):
+        print(data)
+        userEmailDict[data["email"]] = request.sid
+        print(userEmailDict)
+
+    @io.on("disconnect")
+    def handleDisconnect():
+        print("Disconnected")
+        for email in userEmailDict:
+            if userEmailDict[email] == request.sid:
+                del userEmailDict[email]
+                break
+
+    @io.on("sendMessage")
+    def handleRequest(data):
+        print(data)
+        sender = data["sender"]
+        receiver = data["receiver"]
+        message = data["message"]
+
+        if receiver in userEmailDict:
+            emit("recieveMessage", message,to=userEmailDict[receiver])
+
+
 
 
 app.run()
