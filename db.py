@@ -29,10 +29,10 @@ class DB:
             
             
         else:
-            self.query("Truncate users;")
             self.query("Truncate messages;")
             self.query("Truncate matches;")
             self.query("Truncate interests;")
+            self.query("Truncate users;")
     
 
         
